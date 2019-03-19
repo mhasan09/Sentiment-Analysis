@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import csv
 import nltk
+nltk.download('stopwords')
 import string
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -85,3 +86,49 @@ plt.figure(figsize=(12,5))
 plt.loglog(word_counts, linestyle='-', linewidth=1.5)
 plt.ylabel("Freq")
 plt.xlabel("Word Rank")
+df = df.drop_duplicates('text')
+
+
+def text_process(raw_text):
+    """
+    Takes in a string of text, then performs the following:
+    1. Remove all punctuation
+    2. Remove all stopwords
+    3. Returns a list of the cleaned text
+    """
+    # Check characters to see if they are in punctuation
+    nopunc = [char for char in list(raw_text) if char not in string.punctuation]
+
+    # Join the characters again to form the string.
+    nopunc = ''.join(nopunc)
+
+    # Now just remove any stopwords
+    return [word for word in nopunc.lower().split() if word.lower() not in stopwords.words('english')]
+
+
+def remove_words(word_list):
+    remove = ['paul', 'ryan', '...', '“', '”', '’', '…', 'ryan’']
+    return [w for w in word_list if w not in remove]
+df = df.copy()
+df['tokens'] = df['text'].apply(text_process) # tokenize style 1
+df['no_pauls'] = df['tokens'].apply(remove_words) #tokenize style 2
+all_words = []
+for line in df['no_pauls']:  # try 'tokens'
+    all_words.extend(line)
+
+# create a word frequency dictionary
+wordfreq = Counter(all_words)
+
+# draw a Word Cloud with word frequencies
+wordcloud = WordCloud(width=900,
+                      height=500,
+                      max_words=500,
+                      max_font_size=100,
+                      relative_scaling=0.5,
+                      colormap='Blues',
+                      normalize_plurals=True).generate_from_frequencies(wordfreq)
+
+plt.figure(figsize=(17, 14))
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis("off")
+plt.show()
